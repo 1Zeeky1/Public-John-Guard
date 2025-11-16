@@ -18,15 +18,15 @@
 #include "../check.h"
 
 namespace AntiCheat {
-    inline const auto& getDiscord() {
-        static const auto& discord = ConfigManager::get()["discord"];
+    inline const auto& getConfig() {
+        static const auto& discord = ConfigManager::get();
         return discord;
     }
 
     inline void logAlert(PlayerData player, const std::string& flagType, const std::string& info, const std::string& action = "flagged") {
         WebhookPayload payload;
         payload.username = "John Guard";
-        payload.avatar_url = getDiscord()["icons"]["alert"];
+        payload.avatar_url = getConfig()["icon"];
 
         std::cout << "[Flagger] " << player.gamertag << "(" << player.xuid << ") - " << flagType << "\n";
 
@@ -56,7 +56,7 @@ namespace AntiCheat {
         payload.embeds.push_back(embed);
         std::string json = payload.toJson();
 
-        sendWebhook(getDiscord()["webhooks"]["ac"], json);
+        sendWebhook(getConfig()["webhook"], json);
     }
 
     inline void flagPlayerOnLogin(
