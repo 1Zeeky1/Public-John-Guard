@@ -11,7 +11,7 @@
 
 /**
  * When ever a chest, shulker, etc is opened BDS sends the packet to everyone
- * Releaving the players location.
+ * Revealing the players location.
  * This code prevents players from over 50 blocks away from getting the packet
  */
 namespace BlockEventHandler {

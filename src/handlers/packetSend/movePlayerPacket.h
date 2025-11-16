@@ -11,7 +11,7 @@
 using namespace bedrock_protocol;
 
 /**
- * Prevents the server from releaving the location of someone who teleported 
+ * Prevents the server from revealing the location of someone who teleported 
  * 
  */
 namespace MovePlayerHandler {
