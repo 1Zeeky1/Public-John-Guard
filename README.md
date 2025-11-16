@@ -11,7 +11,7 @@ Other features:
 Config:
 ```json
 {
-    webhook: ""
+    webhook: "",
     icon: ""
 }
 ```
