@@ -11,7 +11,36 @@ using json = nlohmann::json;
 
 const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-std::string base64Decoder(const std::string &in) {
+template<typename T>
+struct VerifyResult {
+    bool success;
+    std::string error;
+    T value;
+};
+
+template<typename T>
+VerifyResult<T> verifyJsonKey(const json& obj, const std::string& key) {
+    VerifyResult<T> result;
+
+    if (!obj.contains(key)) {
+        result.success = false;
+        result.error = "Key doesn't exist";
+        return result;
+    }
+
+    try {
+        result.value = obj.at(key).get<T>();
+        result.success = true;
+        return result;
+    } 
+    catch (...) {
+        result.success = false;
+        result.error = "Wrong data type";
+        return result;
+    }
+}
+
+inline std::string base64Decoder(const std::string &in) {
     std::string out;
     std::vector<int> T(256, -1);
     for (int i = 0; i < 64; i++)
@@ -30,7 +59,7 @@ std::string base64Decoder(const std::string &in) {
     return out;
 }
 
-json parseJwtPayload(const std::string& jwt) {
+inline json parseJwtPayload(const std::string& jwt) {
     size_t dot1 = jwt.find('.');
     size_t dot2 = jwt.find('.', dot1 + 1);
     std::string payloadB64 = jwt.substr(dot1 + 1, dot2 - dot1 - 1);

@@ -4,6 +4,7 @@
 #include "json.hpp"
 
 #include "util/packets/login.h"
+#include "util/decoder/util.h"
 #include "../check.h"
 
 using json = nlohmann::json;
@@ -24,11 +25,14 @@ public:
         if (deviceOS == DeviceOS::PlayStation) return { CheckStatus::Pass, "" };
 
         json tokenData = loginPkt->token;
-        std::string gamertag = tokenData["xname"].get<std::string>();
+        auto gamertag = verifyJsonKey<std::string>(tokenData, "xname");
+        if (!gamertag.success) {
+            return { CheckStatus::NoValue, gamertag.error };
+        }
 
-        if (ctx.gamertag != gamertag) {
+        if (ctx.gamertag != gamertag.value) {
             CheckResult res{ CheckStatus::Fail, "Not allowed" };
-            res.extraData["fakeName"] = gamertag; 
+            res.extraData["fakeName"] = gamertag.value.substr(0, 36);; 
             return res;
         } 
 

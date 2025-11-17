@@ -5,7 +5,7 @@
 
 #include "util/packets/util.h"
 
-enum class CheckStatus { Pass, Fail, Error };
+enum class CheckStatus { Pass, Fail, Error, NoValue };
 
 struct CheckResult {
     CheckStatus status;

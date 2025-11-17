@@ -4,6 +4,7 @@
 #include "json.hpp"
 
 #include "util/packets/login.h"
+#include "util/decoder/util.h"
 #include "../check.h"
 
 using json = nlohmann::json;
@@ -21,8 +22,12 @@ public:
         if (!loginPkt) return { CheckStatus::Error, "Packet cast failed" };
 
         json clientData = loginPkt->clientData;
-        std::string deviceModel = clientData["DeviceModel"].get<std::string>();
-        if (deviceModel == "PrismarineJS") {
+        auto deviceModel = verifyJsonKey<std::string>(clientData, "DeviceModel");
+        if (!deviceModel.success) {
+            return { CheckStatus::NoValue, deviceModel.error };
+        }
+
+        if (deviceModel.value == "PrismarineJS") {
             return { CheckStatus::Fail, "Not allowed" };
         } 
 

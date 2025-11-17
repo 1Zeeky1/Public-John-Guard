@@ -4,6 +4,7 @@
 #include "json.hpp"
 
 #include "util/packets/login.h"
+#include "util/decoder/util.h"
 #include "../check.h"
 
 using json = nlohmann::json;
@@ -26,11 +27,14 @@ public:
         if (defaultInputMode == -1) return { CheckStatus::Pass, "Unknown device input mode" };
 
         json clientData = loginPkt->clientData;
-        int currentDefaultInputMode = clientData["DefaultInputMode"].get<int>();
+        auto currentDefaultInputMode = verifyJsonKey<int>(clientData, "DefaultInputMode");
+        if (!currentDefaultInputMode.success) {
+            return { CheckStatus::NoValue, currentDefaultInputMode.error };
+        }
         
-        if (currentDefaultInputMode != defaultInputMode) {
+        if (currentDefaultInputMode.value != defaultInputMode) {
             CheckResult res{ CheckStatus::Fail, "Not allowed" };
-            res.extraData["currentInput"] = std::to_string(currentDefaultInputMode);
+            res.extraData["currentInput"] = std::to_string(currentDefaultInputMode.value);
             res.extraData["defaultInput"] = std::to_string(defaultInputMode); 
             return res;
         }

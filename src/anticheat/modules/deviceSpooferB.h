@@ -5,6 +5,7 @@
 #include "json.hpp"
 
 #include "util/packets/login.h"
+#include "util/decoder/util.h"
 #include "../check.h"
 
 using json = nlohmann::json;
@@ -25,18 +26,21 @@ public:
         json identityData = loginPkt->identityData;
 
         std::string titleId = ctx.titleId;
-        int deviceOS = clientData["DeviceOS"].get<int>();
+        auto deviceOS = verifyJsonKey<int>(clientData, "DeviceOS");
+        if (!deviceOS.success) {
+            return { CheckStatus::NoValue, deviceOS.error };
+        }
 
         int titleIdAsNumber = std::stoul(titleId);
         int titleDeviceOS = DeviceOS::getOSId(titleIdAsNumber);
 
         if (titleDeviceOS == 0) {
             std::cout << "Unhandled titleId (" << titleId << ") for "
-                << std::to_string(deviceOS) << "\n";
-        } else if (titleDeviceOS != deviceOS) {
+                << std::to_string(deviceOS.value) << "\n";
+        } else if (titleDeviceOS != deviceOS.value) {
             CheckResult res{ CheckStatus::Fail, "Not allowed" };
             res.extraData["title"] = DeviceOS::getName(titleDeviceOS);
-            res.extraData["client"] = DeviceOS::getName(deviceOS); 
+            res.extraData["client"] = DeviceOS::getName(deviceOS.value); 
             return res;
         }
 

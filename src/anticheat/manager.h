@@ -38,7 +38,7 @@ public:
         for (auto& check : it->second) {
             CheckResult result = check->run(ctx, packet);
 
-            if (result.status == CheckStatus::Fail) {
+            if (result.status == CheckStatus::Fail || result.status == CheckStatus::NoValue) {
                 auto& record = violations[ctx.uuid];
 
                 auto now = std::chrono::steady_clock::now();
@@ -77,7 +77,7 @@ public:
                 }
 
                 const std::string logStr = log.str();
-                plugin->getServer().broadcast(logStr, "john.notify");
+                plugin->getServer().broadcast(logStr, "minecraft.command.kick");
 
                 const std::string extraStr = extraInfo.str();
 

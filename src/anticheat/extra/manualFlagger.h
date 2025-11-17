@@ -28,8 +28,6 @@ namespace AntiCheat {
         payload.username = "John Guard";
         payload.avatar_url = getConfig()["icon"];
 
-        std::cout << "[Flagger] " << player.gamertag << "(" << player.xuid << ") - " << flagType << "\n";
-
         Embed embed;
         embed.title = "**" + player.gamertag + " was " + action + " for " + flagType + "**";
         embed.color = 0xED4245;
@@ -74,7 +72,7 @@ namespace AntiCheat {
             " §6was kicked for §4" +
             flagType +
             "§7 " + formattedInfo,
-            "minecraft.command.kill"
+            "minecraft.command.kick"
         );
 
         logAlert(playerData, flagType, formattedInfo, "kicked");

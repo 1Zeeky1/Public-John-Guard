@@ -23,7 +23,7 @@ public:
         Unknown                 = 1,
         Overflow                = 2,
         NoCertificate           = 3,
-        OfflineClient           = 4,
+        NotAuthenticated        = 4,
         MalformedChainData      = 5,
         NoExtraData             = 6,
         NoToken                 = 7,

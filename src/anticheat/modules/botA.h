@@ -4,6 +4,7 @@
 #include "json.hpp"
 
 #include "util/packets/login.h"
+#include "util/decoder/util.h"
 #include "../check.h"
 
 using json = nlohmann::json;
@@ -22,8 +23,13 @@ public:
 
 
         json clientData = loginPkt->clientData;
-        int maxViewDistance = clientData["MaxViewDistance"].get<int>();
-        if (maxViewDistance == 0) {
+        auto maxViewDistance = verifyJsonKey<int>(clientData, "MaxViewDistance");
+        
+        if (!maxViewDistance.success) {
+            return { CheckStatus::NoValue, maxViewDistance.error };
+        }
+        
+        if (maxViewDistance.value == 0) {
             return { CheckStatus::Fail, "Not allowed" };
         }
 

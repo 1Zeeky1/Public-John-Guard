@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "util/decoder/util.h"
 #include "../decoder/util.h"
 #include "login.h"
 
@@ -45,20 +46,8 @@ bool LoginPacket::parseIdentityData() {
         // Json object containing the "Certificate", "AuthenticationType", and "Token".
         json tokensData = json::parse(rawTokensData);
 
-        if (!tokensData.contains("Certificate") || 
-            !tokensData["Certificate"].is_string()) {
-                result = { 
-                    PacketStatus::JsonParseError, 
-                    LoginPacket::NoCertificate,
-                    "Client authentication error"
-                };
-                return false;
-        }
-
-        if (
-            !tokensData.contains("AuthenticationType") || 
-            !tokensData["AuthenticationType"].is_number_integer()
-        ) {
+        auto authenticationType = verifyJsonKey<int>(tokensData, "AuthenticationType");
+        if (!authenticationType.success) {
             result = {
                 PacketStatus::JsonParseError,
                 LoginPacket::MalformedAuthType,
@@ -67,18 +56,26 @@ bool LoginPacket::parseIdentityData() {
             return false;
         }
 
-        int authType = tokensData["AuthenticationType"].get<int>();
-        if (authType != 0) {
+        if (authenticationType.value != 0) {
             result = {
                 PacketStatus::JsonParseError,
-                LoginPacket::OfflineClient,
+                LoginPacket::NotAuthenticated,
                 "Offline mode"
             };
             return false;
         }
 
-        std::string rawCertificate = tokensData["Certificate"];
-        json certificate = json::parse(rawCertificate);
+        auto rawCertificate = verifyJsonKey<std::string>(tokensData, "Certificate");
+        if (!rawCertificate.success) {
+            result = { 
+                PacketStatus::JsonParseError, 
+                LoginPacket::NoCertificate,
+                "Client authentication error"
+            };
+            return false;
+        }
+
+        json certificate = json::parse(rawCertificate.value);
 
         // Prevents a one packet crash with the login packet
         if (
@@ -118,22 +115,18 @@ bool LoginPacket::parseIdentityData() {
         }
 
         // Once analyzed more I'll add additional checks
-        if (
-            !tokensData.contains("Token") || 
-            !tokensData["Token"].is_string() ||
-            tokensData["Token"].get<std::string>().empty()
-        ) {
+        auto rawToken = verifyJsonKey<std::string>(tokensData, "Token");
+        if (!rawToken.success || rawToken.value.empty()) {
             result = {
                 PacketStatus::JsonParseError,
                 LoginPacket::NoToken,
                 "No token"
             };
-            return false;
+            return false;    
         }
-
-        std::string rawToken = tokensData["Token"];
+            
         try {
-            token = parseJwtPayload(rawToken);
+            token = parseJwtPayload(rawToken.value);
         } catch (const std::exception& e) {
             result = {
                 PacketStatus::JwtParseFailure,

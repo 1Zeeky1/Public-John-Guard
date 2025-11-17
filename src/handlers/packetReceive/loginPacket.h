@@ -5,6 +5,7 @@
 #include "../../anticheat/extra/syn.h"
 #include "../../util/packets/login.h"
 #include "../../anticheat/manager.h"
+#include "util/decoder/util.h"
 #include "util/discord.h"
 
 using namespace bedrock_protocol;
@@ -37,16 +38,20 @@ namespace LoginHandler {
             };
 
             if (!identityData.is_null()) {
-                std::string titleId = identityData["titleId"].get<std::string>();
-                uint32_t titleIdInt = std::stoul(titleId);
-                std::string device = DeviceOS::getName(titleIdInt);
+                auto uuid =     verifyJsonKey<std::string>(identityData, "identity");
+                auto xuid =     verifyJsonKey<std::string>(identityData, "XUID");
+                auto name =     verifyJsonKey<std::string>(identityData, "displayName");
+                auto tid =      verifyJsonKey<std::string>(identityData, "titleId");
+
+                std::string titleId = tid.success ? tid.value : "0";
+                uint32_t titleIdInt = std::strtoul(titleId.c_str(), nullptr, 10);
+                std::string deviceName = DeviceOS::getName(titleIdInt);
 
                 playerFlagData = {
-                    identityData["identity"].get<std::string>().substr(0, 36),
-                    identityData["XUID"].get<std::string>().substr(0, 36),
-                    identityData["displayName"].get<std::string>().substr(0, 36),
-                    host, "Unknown", device,
-                    identityData["titleId"].get<std::string>().substr(0, 36)
+                    uuid.success    ? uuid.value.substr(0, 36) : "Unknown",
+                    xuid.success    ? xuid.value.substr(0, 36) : "Unknown",
+                    name.success    ? name.value.substr(0, 36) : "Unknown",
+                    host, "Unknown", deviceName, titleId.substr(0, 36)
                 };
             }
 
@@ -57,28 +62,22 @@ namespace LoginHandler {
 
         json clientData = packet.clientData;
 
-        PlayerData playerData = {
-            identityData["identity"].get<std::string>(),
-            identityData["XUID"].get<std::string>(),
-            identityData["displayName"].get<std::string>(),
-            host,
-            clientData["DeviceId"].get<std::string>(),
-            std::to_string(clientData["DeviceOS"].get<int>()),
-            identityData["titleId"].get<std::string>()
-        };
+        auto uuid       = verifyJsonKey<std::string>(identityData, "identity");
+        auto xuid       = verifyJsonKey<std::string>(identityData, "XUID");
+        auto name       = verifyJsonKey<std::string>(identityData, "displayName");
+        auto titleId    = verifyJsonKey<std::string>(identityData, "titleId");
+        auto deviceId   = verifyJsonKey<std::string>(clientData,  "DeviceId");
+        auto deviceOS   = verifyJsonKey<int>(clientData, "DeviceOS");
 
-        // try {
-        //     std::string dump = clientData.dump(2);
-        //     std::string filename = playerData.gamertag + ".json";
-        //     sendDebugWebhook(
-        //         "https://discord.com/api/webhooks/1435840716231278772/fjb0-iaYcRB5R6uGnhTVAosoOqbLHT4cwh7UQXnviXpwmBlBdCKhltWmEk0C4vl5mA3V",
-        //         filename,
-        //         "Client data dump", 
-        //         dump
-        //     );
-        // } catch (const std::exception& e) {
-        //     std::cerr << "Error sending clientData file: " << e.what() << "\n";
-        // }
+        PlayerData playerData = {
+            uuid.success    ? uuid.value    : "Unknown",
+            xuid.success    ? xuid.value    : "0",
+            name.success    ? name.value    : "Unknown",
+            host,
+            deviceId.success   ? deviceId.value : "Unknown",
+            deviceOS.success   ? std::to_string(deviceOS.value) : "0",
+            titleId.success ? titleId.value : "0"
+        };
 
         ChecksResult checkResult = acManager.runChecks(playerData, packet, plugin);
         if (!checkResult.passed) {
